@@ -172,11 +172,11 @@ Instead of showing only raw numbers, the dashboard provides simple, actionable i
 
 | Name | Role |
 |---|---|
-| **Vaishnavi Chaubey** | Project Lead |
-| Mohd Noorain | Developer |
-| Priyanshu Pandey | Team Member |
-| Navneet Sharma | Team Member |
-| Priyanshu Kumari | Team Member |
+| **Vaishnavi Chaubey** | Project Lead & System Designer |
+| Mohd Noorain | Data Analyst & Integration|
+| Priyanshu Pandey | IoT Hardware Developer 1 |
+| Navneet Sharma |IoT Hardware Developer 2 |
+| Priyanshu Kumari | Backend Developer |
 
 **Institution:** IILM University, Greater Noida
 
