@@ -23,16 +23,7 @@ const SECS = ['overview', 'charts', 'table'];
 
 // 1. FIREBASE INITIALISATION
 // ══════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey:            "AIzaSyCnklsvn47pT6DcxghupYN0X2_3Om-LRi4",
-  authDomain:        "iot-dashboard-58e0e.firebaseapp.com",
-  databaseURL:       "https://iot-dashboard-58e0e-default-rtdb.firebaseio.com",
-  projectId:         "iot-dashboard-58e0e",
-  storageBucket:     "iot-dashboard-58e0e.firebasestorage.app",
-  messagingSenderId: "1949670496",
-  appId:             "1:1949670496:web:352950378be90aedcd7705",
-  measurementId:     "G-1WZN7JTYSK"
-};
+
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
