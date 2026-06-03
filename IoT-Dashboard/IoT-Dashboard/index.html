@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>⚡ Smart Environment Dashboard</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Firebase SDK v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<!-- External CSS -->
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER — same structure, added Firebase status pill
+     ══════════════════════════════════════════════════════ -->
+<header>
+  <div class="hl">
+    <div class="pdot"></div>
+    <div>
+      <h1>⚡ Smart Environment Dashboard</h1>
+      <p class="sub">Firebase Real-time IoT Monitoring System</p>
+    </div>
+  </div>
+  <div class="hr">
+    <!-- CHANGED: "Row X / 120" → live reading counter from Firebase -->
+    <div class="mono-pill row-pill" id="rowPill">Readings: 0</div>
+    <!-- NEW: Firebase connection status -->
+    <div class="fb-status connecting" id="fbStatus">
+      <span class="fb-dot"></span><span id="fbStatusText">Connecting…</span>
+    </div>
+    <div class="live-badge"><span class="ldot"></span>LIVE</div>
+    <div class="mono-pill" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     NEW: Multi-alert list — one item per breached sensor,
+     auto-removes when value returns to normal
+     ══════════════════════════════════════════════════════ -->
+<div id="alertList"></div>
+
+<!-- Legacy single-alert element kept for compatibility -->
+<div class="alert" id="alert" style="display:none">
+  <span>⚠️</span><span id="alertMsg"></span>
+  <button onclick="this.parentElement.style.display='none'">✕</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showSec('overview')">📊 Overview</div>
+  <div class="tab" onclick="showSec('charts')">📈 Graphs</div>
+  <div class="tab" onclick="showSec('table')">🗂 Live Data Log</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     OVERVIEW — same IDs, same structure
+     ══════════════════════════════════════════════════════ -->
+<div id="sec-overview">
+  <!-- CHANGED: label reflects Firebase real-time source -->
+  <div class="sl">↳ LIVE SENSOR READINGS — FIREBASE REALTIME DATABASE · sensor/</div>
+  <div class="cgrid">
+
+    <div class="card" id="c-temp" onclick="jumpChart('temp')">
+      <div class="cg gt"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">🌡️</span><span class="clbl">Temperature</span></div>
+        <div class="cvw"><span class="cv" id="v-temp">--</span><span class="cu">°C</span></div>
+        <div class="cft"><div class="bt"><div class="bf bft" id="b-temp"></div></div><span class="ctg" id="tg-temp">—</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="c-hum" onclick="jumpChart('hum')">
+      <div class="cg gh"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">💧</span><span class="clbl">Humidity</span></div>
+        <div class="cvw"><span class="cv" id="v-hum">--</span><span class="cu">%</span></div>
+        <div class="cft"><div class="bt"><div class="bf bfh" id="b-hum"></div></div><span class="ctg" id="tg-hum">—</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="c-mq135" onclick="jumpChart('mq135')">
+      <div class="cg gm1"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">🟣</span><span class="clbl">MQ-135</span></div>
+        <div class="cvw"><span class="cv" id="v-mq135">--</span><span class="cu">ppm</span></div>
+        <div class="cft"><div class="bt"><div class="bf bfm1" id="b-mq135"></div></div><span class="ctg" id="tg-mq135">Air Quality</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="c-mq2" onclick="jumpChart('mq2')">
+      <div class="cg gm2"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">🔴</span><span class="clbl">MQ-2</span></div>
+        <div class="cvw"><span class="cv" id="v-mq2">--</span><span class="cu">ppm</span></div>
+        <div class="cft"><div class="bt"><div class="bf bfm2" id="b-mq2"></div></div><span class="ctg" id="tg-mq2">Smoke/LPG</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="c-mq6" onclick="jumpChart('mq6')">
+      <div class="cg gm6"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">🟦</span><span class="clbl">MQ-6</span></div>
+        <div class="cvw"><span class="cv" id="v-mq6">--</span><span class="cu">ppm</span></div>
+        <div class="cft"><div class="bt"><div class="bf bfm6" id="b-mq6"></div></div><span class="ctg" id="tg-mq6">LPG/Butane</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="c-snd" onclick="jumpChart('snd')">
+      <div class="cg gs"></div>
+      <div class="cin">
+        <div class="chdr"><span class="cion">🔊</span><span class="clbl">KY-038</span></div>
+        <div class="cvw"><span class="cv" id="v-snd">--</span><span class="cu">dB</span></div>
+        <div class="cft"><div class="bt"><div class="bf bfs" id="b-snd"></div></div><span class="ctg" id="tg-snd">Sound Level</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATS — same IDs; now show live session averages -->
+  <div class="stats">
+    <div class="st"><span class="stl">Avg Temp</span><span class="stv" id="s-temp">--</span></div>
+    <div class="sdv"></div>
+    <div class="st"><span class="stl">Avg Humidity</span><span class="stv" id="s-hum">--</span></div>
+    <div class="sdv"></div>
+    <div class="st"><span class="stl">Avg MQ-135</span><span class="stv" id="s-mq135">--</span></div>
+    <div class="sdv"></div>
+    <div class="st"><span class="stl">Avg MQ-2</span><span class="stv" id="s-mq2">--</span></div>
+    <div class="sdv"></div>
+    <div class="st"><span class="stl">Avg MQ-6</span><span class="stv" id="s-mq6">--</span></div>
+    <div class="sdv"></div>
+    <div class="st"><span class="stl">Avg Sound</span><span class="stv" id="s-snd">--</span></div>
+    <div class="sdv"></div>
+    <!-- CHANGED: "Success %" → "Updates" count -->
+    <div class="st"><span class="stl">Updates</span><span class="stv" id="s-ok">0</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     CHARTS — same structure, same IDs, same panels
+     ══════════════════════════════════════════════════════ -->
+<div id="sec-charts" style="display:none">
+  <div class="sl">↳ ROLLING CHARTS — LAST 20 FIREBASE READINGS · AUTO-CYCLES EVERY 5 SEC</div>
+  <div class="cauto">
+    <div class="cat"><div class="caf" id="caf"></div></div>
+    <span class="cal" id="cal">Next in 5s</span>
+    <button class="btn" id="caBtn" onclick="toggleChartAuto()" style="font-size:.62rem;padding:4px 10px">⏸ Auto</button>
+  </div>
+  <div class="ctabs">
+    <div class="ctab active" id="ct-temp"  onclick="showChart('temp')">🌡️ Temp</div>
+    <div class="ctab"        id="ct-hum"   onclick="showChart('hum')">💧 Humidity</div>
+    <div class="ctab"        id="ct-mq135" onclick="showChart('mq135')">🟣 MQ-135</div>
+    <div class="ctab"        id="ct-mq2"   onclick="showChart('mq2')">🔴 MQ-2</div>
+    <div class="ctab"        id="ct-mq6"   onclick="showChart('mq6')">🟦 MQ-6</div>
+    <div class="ctab"        id="ct-snd"   onclick="showChart('snd')">🔊 KY-038</div>
+  </div>
+
+  <div class="cpanel active" id="cp-temp">
+    <div class="cc"><div class="cch"><h3>🌡️ Temperature — Live Trend (°C)</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-temp"></canvas></div></div>
+  </div>
+  <div class="cpanel" id="cp-hum">
+    <div class="cc"><div class="cch"><h3>💧 Humidity — Live Trend (%)</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-hum"></canvas></div></div>
+  </div>
+  <div class="cpanel" id="cp-mq135">
+    <div class="cc"><div class="cch"><h3>🟣 MQ-135 Air Quality — ppm</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-mq135"></canvas></div></div>
+  </div>
+  <div class="cpanel" id="cp-mq2">
+    <div class="cc"><div class="cch"><h3>🔴 MQ-2 Smoke/LPG — ppm</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-mq2"></canvas></div></div>
+  </div>
+  <div class="cpanel" id="cp-mq6">
+    <div class="cc"><div class="cch"><h3>🟦 MQ-6 LPG/Butane — ppm</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-mq6"></canvas></div></div>
+  </div>
+  <div class="cpanel" id="cp-snd">
+    <div class="cc"><div class="cch"><h3>🔊 KY-038 Sound Level — dB</h3><span class="cbadge">LIVE · LINE</span></div><div class="cw"><canvas id="ch-snd"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TABLE — CHANGED: now a live data log of Firebase readings
+     ══════════════════════════════════════════════════════ -->
+<div id="sec-table" style="display:none">
+  <div class="sl">↳ LIVE DATA LOG — LAST 50 FIREBASE READINGS (NEWEST FIRST)</div>
+  <div class="tcontrols">
+    <input class="sbox" id="sb" placeholder="🔍  Search value or timestamp…" oninput="filterTbl()"/>
+    <select class="fsel" id="sf" onchange="filterTbl()">
+      <option value="">All Readings</option>
+      <option value="alert">⚠ Alert Readings</option>
+      <option value="normal">✅ Normal Readings</option>
+    </select>
+    <span class="tinfo" id="tinfo">0 rows</span>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th onclick="sortTbl('ts')">#</th>
+        <th onclick="sortTbl('Temp')">Temp °C</th>
+        <th onclick="sortTbl('Humidity')">Humidity %</th>
+        <th onclick="sortTbl('MQ135')">MQ-135</th>
+        <th onclick="sortTbl('MQ2')">MQ-2</th>
+        <th onclick="sortTbl('MQ6')">MQ-6</th>
+        <th onclick="sortTbl('Sound')">KY-038</th>
+        <th>Status</th>
+      </tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <div class="pg" id="pg"></div>
+</div>
+
+<footer>
+  <span>⚡ Smart Environment Dashboard — Firebase IoT Monitoring</span>
+  <span id="lu">Waiting for Firebase…</span>
+</footer>
+</div><!-- /wrap -->
+
+<!-- External JS (load AFTER body so DOM is ready) -->
+<script src="script.js"></script>
+
+</body>
+</html>
